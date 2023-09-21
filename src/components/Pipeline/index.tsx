@@ -38,27 +38,35 @@ const Pipeline = () => {
   const [columns, setColumns] = useState(initialColumns);
 
   const onDragEnd = (result: any) => {
-    if (!result.destination) return;
-
     const { source, destination } = result;
-
+  
+    // Descarta se o item for descartado fora de uma coluna
+    if (!destination) return;
+  
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
+  
     const startColumn = columns[source.droppableId];
     const finishColumn = columns[destination.droppableId];
-
+  
     if (startColumn === finishColumn) {
       const newItems = Array.from(startColumn.items);
       const [movedItem] = newItems.splice(source.index, 1);
       newItems.splice(destination.index, 0, movedItem);
-
+  
       const newColumn = { ...startColumn, items: newItems };
-
       setColumns(prev => ({ ...prev, [newColumn.id]: newColumn }));
     } else {
       const startItems = Array.from(startColumn.items);
       const [movedItem] = startItems.splice(source.index, 1);
+  
       const finishItems = Array.from(finishColumn.items);
       finishItems.splice(destination.index, 0, movedItem);
-
+  
       setColumns(prev => ({
         ...prev,
         [source.droppableId]: { ...startColumn, items: startItems },
