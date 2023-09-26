@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Responsive, WidthProvider } from 'react-grid-layout'
-import { DndProvider } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import { useDrag, useDrop } from 'react-dnd'
+import React, { useState } from 'react';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useDrag, useDrop } from 'react-dnd';
 
-import './react-grid-layout.css'
-import './react-resizable.css'
+import './react-grid-layout.css';
+import './react-resizable.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -24,13 +24,14 @@ type ColumnType = {
 
 type ColumnProps = {
   column: ColumnType;
-  moveCardToColumn: (cardId: string, sourceColumnId: string, destinationColumnId: string) => void;
-}
+  moveCardToColumn: (cardId: string, sourceColumnId: string, destinationColumnId: string, position: number) => void;
+};
 
 type CardProps = {
   card: CardType;
   sourceColumnId: string;
-}
+  position: number;
+};
 
 const initialColumns: ColumnType[] = [
   {
@@ -39,6 +40,9 @@ const initialColumns: ColumnType[] = [
     cards: [
       { id: 'card1', content: 'Tarefa 1' },
       { id: 'card2', content: 'Tarefa 2' },
+      { id: 'card3', content: 'Tarefa 3' },
+      { id: 'card4', content: 'Tarefa 4' },
+      { id: 'card5', content: 'Tarefa 5' },
     ],
   },
   {
@@ -56,17 +60,19 @@ const initialColumns: ColumnType[] = [
 const Pipeline: React.FC = () => {
   const [columns, setColumns] = useState(initialColumns);
 
-  const moveCardToColumn = (cardId: string, sourceColumnId: string, destinationColumnId: string) => {
+  const moveCardToColumn = (cardId: string, sourceColumnId: string, destinationColumnId: string, position: number) => {
     setColumns(prevColumns => {
       const sourceColumn = prevColumns.find(column => column.id === sourceColumnId);
       const destinationColumn = prevColumns.find(column => column.id === destinationColumnId);
       if (!sourceColumn || !destinationColumn) return prevColumns;
 
-      const card = sourceColumn.cards.find(c => c.id === cardId);
-      if (!card) return prevColumns;
+      const cardIndex = sourceColumn.cards.findIndex(c => c.id === cardId);
+      if (cardIndex === -1) return prevColumns;
 
-      sourceColumn.cards = sourceColumn.cards.filter(c => c.id !== cardId);
-      destinationColumn.cards = [...destinationColumn.cards, card];
+      const cardToMove = sourceColumn.cards[cardIndex];
+      const newCard = { ...cardToMove };
+      destinationColumn.cards.splice(position, 0, newCard);
+      sourceColumn.cards.splice(cardIndex, 1);
 
       return [...prevColumns];
     });
@@ -82,14 +88,8 @@ const Pipeline: React.FC = () => {
         containerPadding={[32, 32]}
       >
         {columns.map((column, index) => (
-          <div
-            key={column.id}
-            data-grid={{ w: 1, h: 3, x: index, y: 0, static: true }}
-          >
-            <Column
-              column={column}
-              moveCardToColumn={moveCardToColumn}
-            />
+          <div key={column.id} data-grid={{ w: 1, h: 3, x: index, y: 0, static: true }}>
+            <Column column={column} moveCardToColumn={moveCardToColumn} />
           </div>
         ))}
       </ResponsiveGridLayout>
@@ -100,10 +100,11 @@ const Pipeline: React.FC = () => {
 const Column: React.FC<ColumnProps> = ({ column, moveCardToColumn }) => {
   const [, drop] = useDrop({
     accept: 'CARD',
-    drop: (item: { id: string, type: string, sourceColumnId: string }) => {
-      moveCardToColumn(item.id, item.sourceColumnId, column.id);
+    drop: (item: { id: string; type: string; sourceColumnId: string }, monitor) => {
+      const position = monitor.getClientOffset()?.y;
+      moveCardToColumn(item.id, item.sourceColumnId, column.id, position || 0);
     },
-    collect: (monitor) => ({
+    collect: monitor => ({
       isOver: !!monitor.isOver(),
     }),
   });
@@ -112,19 +113,19 @@ const Column: React.FC<ColumnProps> = ({ column, moveCardToColumn }) => {
     <div ref={drop} className={`flex flex-col p-4 space-y-4 bg-gray-200 rounded-lg`}>
       <h2 className="text-xl font-bold">{column.title}</h2>
       <div className="flex flex-col space-y-2">
-        {column.cards.map(card => (
-          <Card key={card.id} card={card} sourceColumnId={column.id} />
+        {column.cards.map((card, index) => (
+          <Card key={card.id} card={card} sourceColumnId={column.id} position={index} />
         ))}
       </div>
     </div>
   );
-}
+};
 
-const Card: React.FC<CardProps> = ({ card, sourceColumnId }) => {
+const Card: React.FC<CardProps> = ({ card, sourceColumnId, position }) => {
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
     item: { id: card.id, type: 'CARD', sourceColumnId },
-    collect: (monitor) => ({
+    collect: monitor => ({
       isDragging: !!monitor.isDragging(),
     }),
   });
@@ -133,10 +134,11 @@ const Card: React.FC<CardProps> = ({ card, sourceColumnId }) => {
     <div
       ref={drag}
       className={`p-4 bg-white rounded shadow ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      style={{ cursor: 'move' }}
     >
       {card.content}
     </div>
   );
-}
+};
 
-export default Pipeline
+export default Pipeline;
