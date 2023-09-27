@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState } from 'react';
-import Board from 'react-trello';
+// import Board from 'react-trello';
+import Board from 'react-ui-kanban'
 
 const KanbanBoard = () => {
   const [data, setData] = useState({
