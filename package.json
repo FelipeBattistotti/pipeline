@@ -24,8 +24,9 @@
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "18.2.0",
+    "react-easy-kanban": "^0.1.2",
     "react-grid-layout": "^1.4.1",
-    "react-ui-kanban": "^1.0.10",
+    "react-ui-kanban": "^1.0.14",
     "tailwindcss": "3.3.3",
     "typescript": "5.2.2"
   }
